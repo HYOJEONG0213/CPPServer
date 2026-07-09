@@ -21,6 +21,7 @@
     <ClCompile Include="Usermanager.cpp">
       <Filter>Main</Filter>
     </ClCompile>
+    <ClCompile Include="SpinLock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -32,5 +33,6 @@
     <ClInclude Include="Usermanager.h">
       <Filter>Main</Filter>
     </ClInclude>
+    <ClInclude Include="SpinLock.h" />
   </ItemGroup>
 </Project>
