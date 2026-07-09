@@ -15,15 +15,16 @@ public:
 		bool expected = false;
 		bool desired = true;
 
-		// _locked==expected라면 expected = _locked, _locked = desired로 바꾸고 true 리턴 : (1)
-		// _locked!=expected라면 expected = _locked, false 리턴 : (2)
-
-		// _locked==false면 (1) 실행 후 잠긴상태로 만들고 true 리턴
-		// _locked==true면 (2) 실행 후 while문으로 빠져나오지 못하고 계속 반복
 		while (_locked.compare_exchange_strong(expected, desired) == false)
 		{
 			// expected 는 매번 바뀌므로 계속 초기화 필요
 			expected = false;
+
+			// Sleep 구현 : 세 방법 중 골라쓰기
+			this_thread::sleep_for(std::chrono::milliseconds(100)); // 100ms간 쉬고 다시 시도
+			this_thread::sleep_for(100ms);
+			this_thread::yield(); // 타임슬라이스 양보 후 커널모드로 돌아가 알아서 스케줄링하라고 떠넘기기
+								  // = sleep_for(0ms)
 		};
 	}
 	void unlock()
