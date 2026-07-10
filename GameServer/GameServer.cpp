@@ -12,6 +12,8 @@ mutex		 m;
 queue<int32> q;
 HANDLE		 handle;
 
+condition_variable cv; // 유저레벨 오브젝트!
+
 void Producer()
 {
 	while (true)
@@ -21,9 +23,7 @@ void Producer()
 			q.push(100);
 		}
 
-		::SetEvent(handle); // Signal 상태로 변경
-
-		this_thread::sleep_for(10000000ms);
+		cv.notify_one(); // wait중인 스레드 하나만 깨우기
 	}
 }
 
@@ -31,11 +31,11 @@ void Consumer()
 {
 	while (true)
 	{
-		::WaitForSingleObject(handle, INFINITE); // Signal 상태가 될 때까지 대기
-		//::ResetEvent(handle);					 // Non-Signal 상태로 변경
-
 		unique_lock<mutex> lock(m);
-		if (q.empty() == false)
+		cv.wait(lock, []() { return q.empty() == false; }); // wait중인 스레드 깨우기
+															// 조건문이 성립할때만 wait에서 빠져나오게 설정
+															// 조건문 성립x -> 대기상태 유지
+
 		{
 			int32 data = q.front();
 			q.pop();
