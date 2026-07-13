@@ -10,36 +10,46 @@
 #include "SpinLock.h"
 #include "Event.h"
 
-int32 buffer[10000][10000];
+int32 x = 0;
+int32 y = 0;
+int32 r1 = 0;
+int32 r2 = 0;
+
+volatile bool ready;
+
+void Thread_1()
+{
+	while (!ready);
+	y = 1;
+	r1 = x;
+}
+
+void Thread_2()
+{
+	while (!ready);
+	x = 1;
+	r2 = y;
+}
 
 int main()
 {
-	memset(buffer, 0, sizeof(buffer));
-
+	int32 count = 0;
+	while (true)
 	{
-		uint64 start = GetTickCount64();
+		ready = false;
+		count++;
+		x = y = r1 = r2 = 0;
 
-		// 공간적 지역성 테스트
+		thread t1(Thread_1);
+		thread t2(Thread_2);
 
-		// 행먼저 출력
-		int64 sum = 0;
-		for (int32 i = 0; i < 10000; i++)
-		{
-			for (int32 j = 0; j < 10000; j++) { sum += buffer[i][j]; }
-		}
-		uint64 end = GetTickCount64();
-		cout << "Elapsed Tick : " << (end - start) << endl;
+		ready = true;
+
+		t1.join();
+		t2.join();
+
+		if (r1 == 0 && r2 == 0) { break; }
 	}
-	{
-		uint64 start = GetTickCount64();
 
-		// 열먼저 출력
-		int64 sum = 0;
-		for (int32 i = 0; i < 10000; i++)
-		{
-			for (int32 j = 0; j < 10000; j++) { sum += buffer[j][i]; }
-		}
-		uint64 end = GetTickCount64();
-		cout << "Elapsed Tick : " << (end - start) << endl;
-	}
+	cout << count << "번만에 빠져나옴!\n";
 }
