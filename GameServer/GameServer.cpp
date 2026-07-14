@@ -10,46 +10,71 @@
 #include "SpinLock.h"
 #include "Event.h"
 
-int32 x = 0;
-int32 y = 0;
-int32 r1 = 0;
-int32 r2 = 0;
+atomic<bool> flag;
+atomic<bool> ready;
+int32		 value;
 
-volatile bool ready;
-
-void Thread_1()
+void Producer()
 {
-	while (!ready);
-	y = 1;
-	r1 = x;
+	value = 10;
+	// 타입1
+	ready.store(true, memory_order::memory_order_release);
+	// -------- 절취선 -------
+
+	// 타입2
+	ready.store(true);
+	std::atomic_thread_fence(memory_order::memory_order_release)
 }
 
-void Thread_2()
+void Consumer()
 {
-	while (!ready);
-	x = 1;
-	r2 = y;
+	// -------- 절취선 -------
+	while (ready.load(memory_order::memory_order_acquire) == false) { ; }
+
+	cout << value << "\n";
 }
 
 int main()
 {
-	int32 count = 0;
-	while (true)
+	// 복습용 코드
 	{
-		ready = false;
-		count++;
-		x = y = r1 = r2 = 0;
+		{
+			flag = false;
 
-		thread t1(Thread_1);
-		thread t2(Thread_2);
+			flag.store(true, memory_order::memory_order_seq_cst);
 
-		ready = true;
+			bool val = flag.load(memory_order::memory_order_seq_cst);
+		}
 
-		t1.join();
-		t2.join();
+		{
+			// 아래처럼 하면  멀티 스레드에서 꼬일수있음(원자적으로 이뤄지지 않음)
+			// .exchange() 를 사용하자!
+			// bool prev = flag;
+			// flag = true;
 
-		if (r1 == 0 && r2 == 0) { break; }
+			bool prev = flag.exchange(true);
+		}
+
+		{
+			// CAS(Compare and Swap) 조건부 수정
+			bool expected = false;
+			bool desired = true;
+			flag.compare_exchange_strong(expected, desired); // expected가 false이면 desired로 바꾸고
+															 // 아니면 expected를 현재 flag값으로 바꿈
+
+			// flag.compare_exchange_weak(expected, desired); // weak : Spurious Failure(가짜 실패) 가능성 있음
+		}
 	}
 
-	cout << count << "번만에 빠져나옴!\n";
+	// Memory Model (정책)
+	// Sequentially Consistent (seq_cst)
+	// Acquire Release (consume, acquire, release, acq_rel)
+	// Relaxed (relaxed)
+
+	ready = false;
+	value = 0;
+	thread t1(Producer);
+	thread t2(Consumer);
+	t1.join();
+	t2.join();
 }
