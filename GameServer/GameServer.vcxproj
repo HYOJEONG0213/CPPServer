@@ -156,6 +156,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AccountManager.cpp" />
+    <ClCompile Include="ConcurrentQueue.cpp" />
+    <ClCompile Include="ConcurrentStack.cpp" />
     <ClCompile Include="Event.cpp" />
     <ClCompile Include="GameServer.cpp" />
     <ClCompile Include="pch.cpp">
@@ -169,6 +171,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccountManager.h" />
+    <ClInclude Include="ConcurrentQueue.h" />
+    <ClInclude Include="ConcurrentStack.h" />
     <ClInclude Include="Event.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="SpinLock.h" />
