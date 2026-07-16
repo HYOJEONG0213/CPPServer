@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <mutex>
 
@@ -49,4 +49,56 @@ private:
 	stack<T>		   _stack;
 	mutex			   _mutex;
 	condition_variable _condVar; // 기다려주기
+};
+
+template <typename T> class LockFreeStack
+{
+	struct Node
+	{
+		Node(const T &value) : data(value) {}
+
+		T	  data;
+		Node *next;
+	};
+
+public:
+	void Push(const T &value)
+	{
+		// 새노드의 next를 현재 head로 설정 후 head를 새노드로 변경
+		// 동시에 여러 스레드가 head에 접근시 문제 발생 가능
+		Node *node = new Node(value);
+		node->next = _head;
+
+		while (_head.compare_exchange_weak(node->next, node) == false)
+		{
+			// 같을때까지 뺑뻉이 돌기
+		}
+
+		_head = node;
+	}
+
+	bool TryPop(T &value)
+	{
+		// head, head->next 읽은 후
+		// 기존 head->next를 새 head로 설정 후 기존 head를 반환 및 삭제
+
+		Node *oldHead = _head;
+
+		while (oldHead && _head.compare_exchange_weak(oldHead, oldHead->next) == false)
+		{
+			// 같을때까지 뺑뻉이 돌기
+		}
+
+		if (oldHead == nullptr) return false;
+
+		value = oldHead->data;
+
+		// 삭제시 다른 스레드에서 크래쉬가 날 수 있다! (삭제된 메모리에 접근하므로)
+		// C#, Java 는 GC가 알아서 해줌;;
+		// delete oldHead;
+		return true;
+	}
+
+private:
+	atomic<Node *> _head;
 };

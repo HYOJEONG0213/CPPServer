@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mutex>;
+#include <mutex>
 
 template <typename T> class LockQueue
 {
