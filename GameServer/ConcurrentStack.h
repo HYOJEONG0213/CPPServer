@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include <mutex>
 
@@ -55,7 +55,7 @@ template <typename T> class LockFreeStack
 {
 	struct Node
 	{
-		Node(const T &value) : data(value) {}
+		Node(const T &value) : data(value), next(nullptr) {}
 
 		T	  data;
 		Node *next;
@@ -79,6 +79,8 @@ public:
 
 	bool TryPop(T &value)
 	{
+		_popCount++;
+
 		// head, head->next 읽은 후
 		// 기존 head->next를 새 head로 설정 후 기존 head를 반환 및 삭제
 
@@ -89,9 +91,15 @@ public:
 			// 같을때까지 뺑뻉이 돌기
 		}
 
-		if (oldHead == nullptr) return false;
+		if (oldHead == nullptr)
+		{
+			_popCount--;
+			return false;
+		}
 
 		value = oldHead->data;
+
+		TryDelete(oldHead);
 
 		// 삭제시 다른 스레드에서 크래쉬가 날 수 있다! (삭제된 메모리에 접근하므로)
 		// C#, Java 는 GC가 알아서 해줌;;
@@ -99,6 +107,72 @@ public:
 		return true;
 	}
 
+	void TryDelete(Node *oldHead)
+	{
+		if (_popCount == 1)
+		{
+			// 나 혼자 및 삭제 예약된 다른 데이터들도 삭제하기
+
+			Node *node = _pendingList.exchange(nullptr);
+
+			if (--_popCount == 0)
+			{
+				// 중간에 끼어든 얘가 없다면 그냥 삭제 진행
+				// 이제와서 끼어들어도 데이터는 분리해둔 상태
+				DeleteNodes(node);
+			}
+			else if (node)
+			{
+				// 중간에 끼어든 얘가 있다면 다시 갖다놓기
+				ChainPendingNodeList(node);
+			}
+
+			delete oldHead;
+		}
+		else
+		{
+			// 이미 누군가가 있다면 삭제만 예약하자
+			ChainPeningNode(oldHead);
+			_popCount--;
+		}
+	}
+
+	void ChainPendingNodeList(Node *first, Node *last)
+	{
+		// 데이터 갖다놓기 (pendingList를 Node 뒤에 붙이기)
+		last->next = _pendingList;
+
+		// 이러는 와중 또 끼어들을 수 있으므로 CAS 필요
+		while (_pendingList.compare_exchange_weak(last->next, first) == false) {}
+	}
+
+	void ChainPendingNodeList(Node *node)
+	{
+		// _pendingList 의 마지막 노드 찾기
+		Node *last = node;
+		while (last->next) last = last->next;
+
+		ChainPendingNodeList(node, last);
+	}
+
+	void ChainPendingNode(Node *node)
+	{
+		// 한개만 붙이는 경우
+		ChainPendingNodeList(node, node);
+	}
+
+	static void DeleteNodes(Node *node)
+	{
+		while (node)
+		{
+			Node *next = node->next;
+			delete node;
+			node = next;
+		}
+	}
+
 private:
 	atomic<Node *> _head;
+	atomic<uint32> _popCount = 0; // pop을 실행중인 스레드 개수 카운팅
+	atomic<Node *> _pendingList;  // 삭제되어야 할 노드들(첫번째 노드)
 };
