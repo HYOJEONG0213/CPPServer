@@ -73,8 +73,6 @@ public:
 		{
 			// 같을때까지 뺑뻉이 돌기
 		}
-
-		_head = node;
 	}
 
 	bool TryPop(T &value)
