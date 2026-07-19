@@ -12,15 +12,16 @@
 #include "ConcurrentStack.h"
 #include "ConcurrentQueue.h"
 
-LockQueue<int32>	 q;
-LockFreeStack<int32> s;
+LockQueue<int32>				  q;
+LockFreeStack<int32>			  s;
+LockFreeStack_SmartPointer<int32> s2;
 
 void Push()
 {
 	while (true)
 	{
 		int32 value = rand() % 100;
-		q.Push(value);
+		s2.Push(value);
 
 		this_thread::sleep_for(10ms);
 	}
@@ -30,14 +31,20 @@ void Pop()
 {
 	while (true)
 	{
-		int32 data = 0;
-		if (q.TryPop(OUT data)) cout << data << "\n";
-		// if (q.WaitPop(OUT data)) cout << data << "\n";
+		// int32 data = 0;
+		// if (q.TryPop(OUT data)) cout << data << "\n";
+
+		auto data = s2.TryPop();
+		if (data != nullptr) cout << (*data) << "\n";
 	}
 }
 
 int main()
 {
+	shared_ptr<int32> ptr;
+	bool			  value = atomic_is_lock_free(&ptr);
+	cout << value << "\n";
+
 	thread t1(Push);
 	thread t2(Pop);
 	thread t3(Pop);

@@ -174,3 +174,39 @@ private:
 	atomic<uint32> _popCount = 0; // pop을 실행중인 스레드 개수 카운팅
 	atomic<Node *> _pendingList;  // 삭제되어야 할 노드들(첫번째 노드)
 };
+
+template <typename T> class LockFreeStack_SmartPointer
+{
+	struct Node
+	{
+		Node(const T &value) : data(make_shared<T>(value)), next(nullptr) {}
+
+		shared_ptr<T>	 data;
+		shared_ptr<Node> next;
+	};
+
+public:
+	void Push(const T &value)
+	{
+		shared_ptr<Node> node = make_shared<Node>(value);
+		node->next = std::atomic_load(&_head);
+
+		while (std::atomic_compare_exchange_weak(&_head, &node->next, node) == false)
+		{
+			// 같을때까지 뺑뻉이 돌기
+		}
+	}
+
+	shared_ptr<T> TryPop()
+	{
+		shared_ptr<Node> oldHead = std::atomic_load(&_head);
+		while (oldHead && std::atomic_compare_exchange_weak(&_head, &oldHead, oldHead->next) == false) {}
+
+		if (oldHead == nullptr) return shared_ptr<T>();
+
+		return oldHead->data;
+	}
+
+private:
+	shared_ptr<Node> _head;
+};
