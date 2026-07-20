@@ -177,36 +177,90 @@ private:
 
 template <typename T> class LockFreeStack_SmartPointer
 {
+	struct Node;
+
+	struct CountedNodePtr
+	{
+		// 내부적으로 참조 횟수 세는 포인터
+		int32 externalCount = 0; // 참조 횟수
+		Node *ptr = nullptr;	 // 포인터
+	};
+
 	struct Node
 	{
-		Node(const T &value) : data(make_shared<T>(value)), next(nullptr) {}
+		Node(const T &value) : data(make_shared<T>(value)) {}
 
-		shared_ptr<T>	 data;
-		shared_ptr<Node> next;
+		shared_ptr<T>  data;
+		atomic<int32>  internalCount = 0;
+		CountedNodePtr next;
 	};
 
 public:
 	void Push(const T &value)
 	{
-		shared_ptr<Node> node = make_shared<Node>(value);
-		node->next = std::atomic_load(&_head);
+		// 스택메모리에 설정
+		CountedNodePtr node;
+		node.ptr = new Node(value);
+		node.externalCount = 1;
 
-		while (std::atomic_compare_exchange_weak(&_head, &node->next, node) == false)
-		{
-			// 같을때까지 뺑뻉이 돌기
-		}
+		// 경합 시작 - CAS 사용
+		node.ptr->next = _head;
+		while (_head.compare_exchange_weak(node.ptr->next, node) == false) {}
 	}
 
 	shared_ptr<T> TryPop()
 	{
-		shared_ptr<Node> oldHead = std::atomic_load(&_head);
-		while (oldHead && std::atomic_compare_exchange_weak(&_head, &oldHead, oldHead->next) == false) {}
+		CountedNodePtr oldHead = _head;
+		while (true)
+		{
+			// 참조권 획득
+			IncreaseHeadCount(oldHead);
 
-		if (oldHead == nullptr) return shared_ptr<T>();
+			// 안전하게 접근할 수 있는 상태가 된다면
+			Node *ptr = oldHead.ptr;
+			if (ptr == nullptr) return shared_ptr<T>();
 
-		return oldHead->data;
+			// 참조권을 여러명이 획득할 수 있으므로
+			// 소유권 획득
+			if (_head.compare_exchange_strong(oldHead, ptr->next))
+			{
+				shared_ptr<T> res;
+				res.swap(ptr->data);
+
+				const int32 countIncrease = oldHead.externalCount - 2;
+				if (ptr->internalCount.fetch_add(countIncrease) == -countIncrease)
+				{
+					delete ptr; // 삭제시 혼자면 }
+
+					return res;
+				}
+				else if (ptr->internalCount.fetch_sub(1) == 1)
+				{
+					// 삭제하려고보니 여러명이 접근했다면 뒷수습
+					// 참조권은 얻었으나 소유권은 실패
+					delete ptr;
+				}
+			}
+		}
 	}
 
 private:
-	shared_ptr<Node> _head;
+	void IncreaseHeadCount(CountedNodePtr &oldCounter)
+	{
+		// externalCount를 1 추가하는 함수
+		while (true)
+		{
+			CountedNodePtr newCounter = oldCounter;
+			newCounter.externalCount++; // 해당 부분에서 경합 발생할 수 있으므로 아래처럼 CAS 연산이 필요
+
+			if (_head.compare_exchange_strong(oldCounter, newCounter))
+			{
+				oldCounter.externalCount = newCounter.externalCount;
+				break;
+			}
+		}
+	}
+
+private:
+	atomic<CountedNodePtr> _head;
 };

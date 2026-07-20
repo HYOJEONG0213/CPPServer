@@ -41,10 +41,6 @@ void Pop()
 
 int main()
 {
-	shared_ptr<int32> ptr;
-	bool			  value = atomic_is_lock_free(&ptr);
-	cout << value << "\n";
-
 	thread t1(Push);
 	thread t2(Pop);
 	thread t3(Pop);
