@@ -7,45 +7,23 @@
 #include <mutex>
 #include <future>
 
-#include "SpinLock.h"
-#include "Event.h"
-#include "ConcurrentStack.h"
-#include "ConcurrentQueue.h"
+#include "ThreadManager.h"
+#include "CoreMacro.h"
 
-LockQueue<int32>				  q;
-LockFreeStack<int32>			  s;
-LockFreeStack_SmartPointer<int32> s2;
+CoreGlobal Core;
 
-void Push()
+void ThreadMain()
 {
 	while (true)
 	{
-		int32 value = rand() % 100;
-		s2.Push(value);
-
-		this_thread::sleep_for(10ms);
-	}
-}
-
-void Pop()
-{
-	while (true)
-	{
-		// int32 data = 0;
-		// if (q.TryPop(OUT data)) cout << data << "\n";
-
-		auto data = s2.TryPop();
-		if (data != nullptr) cout << (*data) << "\n";
+		cout << "thread : " << LThreadId << "\n";
+		this_thread::sleep_for(1s);
 	}
 }
 
 int main()
 {
-	thread t1(Push);
-	thread t2(Pop);
-	thread t3(Pop);
+	for (int32 i = 0; i < 5; i++) { GThreadManager->Launch(ThreadMain); }
 
-	t1.join();
-	t2.join();
-	t3.join();
+	GThreadManager->Join();
 }
