@@ -18,7 +18,7 @@
     <ClCompile Include="AccountManager.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="Usermanager.cpp">
+    <ClCompile Include="UserManager.cpp">
       <Filter>Main</Filter>
     </ClCompile>
     <ClCompile Include="SpinLock.cpp">
@@ -41,7 +41,7 @@
     <ClInclude Include="AccountManager.h">
       <Filter>Main</Filter>
     </ClInclude>
-    <ClInclude Include="Usermanager.h">
+    <ClInclude Include="UserManager.h">
       <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="SpinLock.h">

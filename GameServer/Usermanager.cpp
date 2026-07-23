@@ -1,10 +1,16 @@
 #include "pch.h"
-#include "Usermanager.h"
+#include "UserManager.h"
 #include "AccountManager.h"
 
-void UserManager::ProcessSave()
-{
-	Account *account = AccountManager::Instance()->GetAccount(100); // accountLock
+UserManager GUserManager;
 
-	lock_guard<mutex> guard(_mutex); // userLock
+void UserManager::UserThenAccount()
+{
+	WRITE_LOCK;
+
+	this_thread::sleep_for(1s);
+
+	GAccountManager.Lock();
 }
+
+void UserManager::Lock() { WRITE_LOCK; }
