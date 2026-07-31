@@ -7,6 +7,9 @@
     <Filter Include="Utils">
       <UniqueIdentifier>{d8a81765-ee24-4021-94ae-fa3aec40a813}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Main\Test">
+      <UniqueIdentifier>{f7ae70f6-747a-4515-bd1e-dd99229463ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameServer.cpp">
@@ -16,22 +19,22 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="AccountManager.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="UserManager.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="SpinLock.cpp">
-      <Filter>Main</Filter>
-    </ClCompile>
-    <ClCompile Include="Event.cpp">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
     </ClCompile>
     <ClCompile Include="ConcurrentQueue.cpp">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
     </ClCompile>
     <ClCompile Include="ConcurrentStack.cpp">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Event.cpp">
+      <Filter>Main\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="SpinLock.cpp">
+      <Filter>Main\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="UserManager.cpp">
+      <Filter>Main\Test</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -39,22 +42,22 @@
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="AccountManager.h">
-      <Filter>Main</Filter>
-    </ClInclude>
-    <ClInclude Include="UserManager.h">
-      <Filter>Main</Filter>
-    </ClInclude>
-    <ClInclude Include="SpinLock.h">
-      <Filter>Main</Filter>
-    </ClInclude>
-    <ClInclude Include="Event.h">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
     </ClInclude>
     <ClInclude Include="ConcurrentQueue.h">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
     </ClInclude>
     <ClInclude Include="ConcurrentStack.h">
-      <Filter>Main</Filter>
+      <Filter>Main\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Main\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="SpinLock.h">
+      <Filter>Main\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="UserManager.h">
+      <Filter>Main\Test</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
