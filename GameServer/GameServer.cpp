@@ -10,51 +10,62 @@
 #include "ThreadManager.h"
 #include "CoreMacro.h"
 
-// 멀티스레드를 사용해 100만 이하의 소수 개수 구하기 : 정답 : 78498
-// 만 이하의 소수 개수 : 1229
-// 천 이하의 소수 개수 : 168
-atomic<int> ret;
-const int	MAX_NUMBER = 1000000;
+#include "RefCounting.h"
 
-bool IsPrime(int num)
+class Wraight : public RefCountable
 {
-	if (num <= 1) return false;
-	if (num == 2 || num == 3) return true;
+public:
+	int _hp = 150;
+	int _posX = 0;
+	int _posY = 0;
+};
 
-	for (int i = 2; i * i <= num; i++)
+class Missile : public RefCountable
+{
+public:
+	void SetTarget(Wraight *target)
 	{
-		if ((num % i) == 0) return false;
+		_target = target;
+		target->AddRef();
 	}
 
-	return true;
-}
-
-int f1(int s, int e)
-{
-	int count = 0;
-	for (int i = s; i <= e; i++)
+	bool Update()
 	{
-		if (IsPrime(i)) count++;
+		if (_target == nullptr) return true;
+
+		int posX = _target->_posX;
+		int posY = _target->_posY;
+
+		if (_target->_hp == 0)
+		{
+			_target->ReleaseRef();
+			_target = nullptr;
+			return true;
+		}
+
+		return false;
 	}
-	return count;
-}
+
+	Wraight *_target = nullptr;
+};
 
 int main()
 {
-	vector<thread> threads;
+	Wraight *wraight = new Wraight();
+	Missile *missile = new Missile();
+	missile->SetTarget(wraight);
 
-	int coreCount = thread::hardware_concurrency();
-	int jobCount = (MAX_NUMBER / coreCount) + 1;
+	// 피격당했다면
+	wraight->_hp = 0;
+	wraight->ReleaseRef();
+	wraight = nullptr;
 
-	for (int i = 0; i < coreCount; i++)
+	while (true)
 	{
-		int start = (i * jobCount) + 1;
-		int end = min(MAX_NUMBER, ((i + 1) * jobCount));
-
-		threads.push_back(thread(thread([start, end]() { ret += f1(start, end); })));
+		if (missile) { missile->Update(); }
 	}
 
-	for (thread &t : threads) { t.join(); }
-
-	cout << ret << "\n";
+	missile->ReleaseRef();
+	missile = nullptr;
+	// delete missile;
 }
